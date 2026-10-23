@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from math import isfinite
 
 
 LIVE_CONFIRMATION = "I_UNDERSTAND_REAL_MONEY_RISK"
@@ -29,6 +30,7 @@ class BotConfig:
     fee_fraction: float = 0.001
     slippage_fraction: float = 0.0005
     poll_seconds: int = 60
+    initial_cash: float = 400.0
     live_enabled: bool = False
     testnet: bool = True
     api_key: str = ""
@@ -50,6 +52,7 @@ class BotConfig:
             fee_fraction=float(os.getenv("FEE_FRACTION", "0.001")),
             slippage_fraction=float(os.getenv("SLIPPAGE_FRACTION", "0.0005")),
             poll_seconds=int(os.getenv("POLL_SECONDS", "60")),
+            initial_cash=float(os.getenv("PAPER_INITIAL_CASH", "400")),
             live_enabled=_bool_env("LIVE_TRADING_ENABLED", False),
             testnet=_bool_env("BINANCE_TESTNET", True),
             api_key=os.getenv("BINANCE_API_KEY", ""),
@@ -75,6 +78,8 @@ class BotConfig:
             raise ValueError("fee/slippage assumptions must be in [0, 0.05)")
         if self.poll_seconds < 10:
             raise ValueError("POLL_SECONDS must be at least 10")
+        if not isfinite(self.initial_cash) or self.initial_cash <= 0:
+            raise ValueError("PAPER_INITIAL_CASH must be finite and > 0")
         if self.mode == "live":
             if self.symbol not in {"BTCUSDT", "ETHUSDT"}:
                 raise ValueError("Initial live release is restricted to BTCUSDT or ETHUSDT")
