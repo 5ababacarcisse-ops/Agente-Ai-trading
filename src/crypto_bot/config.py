@@ -62,8 +62,8 @@ class BotConfig:
             raise ValueError("require 1 <= FAST_WINDOW < SLOW_WINDOW")
         if self.candles < self.slow_window + 2 or self.candles > 1000:
             raise ValueError("TRADING_CANDLES must be between SLOW_WINDOW + 2 and 1000")
-        if not 0 < self.max_allocation_fraction <= 0.25:
-            raise ValueError("MAX_ALLOCATION_FRACTION must be in (0, 0.25]")
+        if not 0 < self.max_allocation_fraction <= 0.10:
+            raise ValueError("MAX_ALLOCATION_FRACTION must be in (0, 0.10]")
         if not 0 < self.max_daily_loss_fraction <= 0.01:
             raise ValueError("MAX_DAILY_LOSS_FRACTION must be in (0, 0.01]")
         if not 0 <= self.fee_fraction < 0.05 or not 0 <= self.slippage_fraction < 0.05:
@@ -71,6 +71,8 @@ class BotConfig:
         if self.poll_seconds < 10:
             raise ValueError("POLL_SECONDS must be at least 10")
         if self.mode == "live":
+            if self.symbol not in {"BTCUSDT", "ETHUSDT"}:
+                raise ValueError("Initial live release is restricted to BTCUSDT or ETHUSDT")
             if not self.live_enabled:
                 raise ValueError("Live trading blocked: set LIVE_TRADING_ENABLED=true only after reviewing the code")
             if self.live_confirmation != LIVE_CONFIRMATION:
