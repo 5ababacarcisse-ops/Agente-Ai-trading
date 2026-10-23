@@ -19,6 +19,7 @@ class LiveState:
     day_utc: str = ""
     day_start_equity: float = 0.0
     halted: bool = False
+    pending_order: str = ""
 
 
 class LiveStateStore:
