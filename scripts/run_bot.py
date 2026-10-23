@@ -7,6 +7,7 @@ Do not run live mode until you've reviewed all source code and tested paper mode
 from __future__ import annotations
 
 import logging
+from math import isfinite
 import os
 import signal
 import time
@@ -169,7 +170,7 @@ def run_live(config: BotConfig) -> None:
                     state_store.save()
                     response = client.market_buy_quote(config.symbol, _format_quote_amount(amount))
                     executed = float(response.get("executedQty", 0))
-                    if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or executed <= 0:
+                    if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or not isfinite(executed) or executed <= 0:
                         raise RuntimeError("Buy order was not confirmed; pending intent retained. Inspect Binance order history.")
                     state.owned_quantity = executed
                     state.last_signal_candle = last.open_time
