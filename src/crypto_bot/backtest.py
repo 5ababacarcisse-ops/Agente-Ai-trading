@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Sequence
 
 from crypto_bot.market_data import Candle
@@ -47,17 +48,18 @@ def backtest_sma_crossover(
     changes in position. This simplified model does not model spread, partial
     fills, tax, or market impact.
     """
-    if initial_cash <= 0:
-        raise ValueError("initial_cash must be > 0")
+    if not isfinite(initial_cash) or initial_cash <= 0:
+        raise ValueError("initial_cash must be finite and > 0")
     if fast_window < 1 or slow_window <= fast_window:
         raise ValueError("require 1 <= fast_window < slow_window")
-    if not 0 <= fee_fraction < 1 or not 0 <= slippage_fraction < 1:
-        raise ValueError("fee and slippage must be in [0, 1)")
+    if (not isfinite(fee_fraction) or not isfinite(slippage_fraction)
+            or not 0 <= fee_fraction < 1 or not 0 <= slippage_fraction < 1):
+        raise ValueError("fee and slippage must be finite and in [0, 1)")
     if len(candles) < slow_window + 1:
         raise ValueError("not enough candles for the selected windows")
     closes = [float(c.close) for c in candles]
-    if any(price <= 0 for price in closes):
-        raise ValueError("all close prices must be positive")
+    if any(not isfinite(price) or price <= 0 for price in closes):
+        raise ValueError("all close prices must be finite and positive")
 
     fast = sma(closes, fast_window)
     slow = sma(closes, slow_window)
