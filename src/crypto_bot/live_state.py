@@ -35,7 +35,8 @@ class LiveStateStore:
             state = LiveState(**json.loads(self.path.read_text(encoding="utf-8")))
             if (not isfinite(state.owned_quantity) or state.owned_quantity < 0
                     or not isfinite(state.day_start_equity) or state.day_start_equity < 0
-                    or state.last_signal_candle < 0 or not isinstance(state.pending_order, str)):
+                    or state.last_signal_candle < 0 or not isinstance(state.pending_order, str)
+                    or not isinstance(state.halted, bool) or not isinstance(state.day_utc, str)):
                 raise ValueError("invalid values in live state")
             return state
         except (OSError, ValueError, TypeError) as exc:
