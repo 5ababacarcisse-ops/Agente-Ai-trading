@@ -102,16 +102,19 @@ def run_live(config: BotConfig) -> None:
         )
     info = client.exchange_info(config.symbol)
     symbols = info.get("symbols", [])
-    if not symbols or symbols[0].get("status") != "TRADING" or symbols[0].get("isSpotTradingAllowed") is False:
-        raise RuntimeError("Symbol is not currently available for Spot trading")
+    if (not symbols or symbols[0].get("status") != "TRADING"
+            or symbols[0].get("isSpotTradingAllowed") is not True):
+        raise RuntimeError("Symbol is not confirmed as Spot-tradable; refusing to trade")
     filters = {f.get("filterType"): f for f in symbols[0].get("filters", [])}
     lot = filters.get("LOT_SIZE", {})
     step_size = lot.get("stepSize")
     min_qty = float(lot.get("minQty", "0"))
     min_notional_filter = filters.get("NOTIONAL", filters.get("MIN_NOTIONAL", {}))
     min_notional = float(min_notional_filter.get("minNotional", "0"))
-    if not step_size:
-        raise RuntimeError("Could not read LOT_SIZE step size; refusing to trade")
+    if not step_size or Decimal(step_size) <= 0:
+        raise RuntimeError("Could not read a valid LOT_SIZE step size; refusing to trade")
+    if not isfinite(min_notional) or min_notional <= 0:
+        raise RuntimeError("Could not read a valid minimum notional filter; refusing to trade")
     LOG.critical("LIVE EXECUTION enabled on %s. Spot only; no leverage, no withdrawals; allocation cap %.1f%%.",
                  "TESTNET" if config.testnet else "MAINNET", config.max_allocation_fraction * 100)
     LOG.critical("Real funds are at risk. Stop with Ctrl+C.")
