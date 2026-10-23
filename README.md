@@ -1,15 +1,16 @@
-# Binance Crypto Bot — safe starter
+# Binance Crypto Bot
 
-A research and paper-trading project. **This repository does not place live orders** and contains no Binance credentials.
+A Python research and trading project for Binance Spot. Paper mode is the default. Live mode exists but is **disabled unless several explicit safety gates are configured**. No credentials are stored in this repository.
 
-## Current status
-- Public Binance candle download (no API key needed)
-- Long-only SMA crossover backtest with configurable fee and slippage assumptions
-- No live order executor and no automated paper-trading loop yet
-- No leverage or futures
-- Risk limits are configuration examples, not guarantees against loss
+## Current capabilities
+- Fetch public Binance Spot candles without credentials.
+- Run a simple long-only SMA crossover backtest with fee/slippage assumptions.
+- Run a continuous local paper simulation with persistent local portfolio state.
+- Optional live Spot market orders, with explicit opt-in, a bot-owned position ledger, symbol filters, no leverage, and daily loss guard.
+- GitHub Actions runs automated tests; it is not a continuous trading host.
 
-## Start locally
+## Setup
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
@@ -17,31 +18,39 @@ pip install -r requirements.txt
 PYTHONPATH=src pytest -q
 ```
 
-## Run a historical backtest
-
-This fetches recent public candles and simulates a simple moving-average strategy. It does not place orders or access your account.
+## Historical backtest
 
 ```bash
 PYTHONPATH=src python scripts/run_backtest.py --symbol BTCUSDT --interval 1h --limit 500 --cash 400
 ```
 
-Optional parameters include `--fast 10 --slow 30 --fee 0.001 --slippage 0.0005`. The defaults assume 0.1% fee and 0.05% slippage per position change; actual costs depend on your account and execution. A recent-candle backtest is only a smoke test, not evidence of a robust strategy. We still need historical out-of-sample validation and better execution assumptions.
+The default costs are assumptions (0.1% fee and 0.05% slippage per position change), not guaranteed actual costs. Recent candles are only a smoke test, not evidence of a robust strategy. A proper evaluation needs longer history, out-of-sample testing, benchmarks, and realistic execution modelling.
 
-## Safety rules
-1. Never commit API keys, secrets, recovery codes, or account data.
-2. Do not enable withdrawal permissions on any API key.
-3. Use public market data and simulated balances first.
-4. Test strategies out-of-sample and include fees/slippage before considering live trading.
-5. A stop-loss cannot guarantee the exit price; losses can exceed estimates.
-6. Never treat backtest performance as a promise of future returns.
+## Continuous paper trading
 
-## Planned stages
-1. Validate risk and strategy code.
-2. Add public market-data ingestion. (implemented)
-3. Add a first fee/slippage-aware research backtest. (implemented; needs stronger validation)
-4. Validate with longer historical and out-of-sample datasets.
-5. Add paper trading and monitor failure modes.
-6. Only after review, consider a separate live-execution module with strict safeguards.
+```bash
+cp .env.example .env
+# Edit .env only for non-secret settings, then export its variables in your shell.
+set -a
+. ./.env
+set +a
+PYTHONPATH=src python scripts/run_bot.py
+```
 
-## Important
-GitHub Actions is suitable for tests and scheduled research jobs, not for continuous low-latency trading. Live trading would require a separately secured always-on runtime and explicit configuration.
+Paper state is written to `data/paper_state.json`; it is ignored by Git. It is a simple simulation and should not be interpreted as an estimate of future returns.
+
+## Live trading: intentionally gated
+
+Live trading uses real money. Do not enable it until you have reviewed the source and run paper mode long enough to understand losses, drawdowns, fees, and failure modes. Backtests cannot guarantee future results.
+
+If you later choose to enable live trading, configure these only in a secure runtime (never in a committed file):
+- `TRADING_MODE=live`
+- `LIVE_TRADING_ENABLED=true`
+- `LIVE_TRADING_CONFIRMATION=I_UNDERSTAND_REAL_MONEY_RISK`
+- `BINANCE_API_KEY` and `BINANCE_API_SECRET`
+
+Create a dedicated Binance API key with **Spot trading only**, withdrawals disabled, and IP restrictions where supported. Never send API keys to ChatGPT or put them in GitHub source files. Start with a small amount you can afford to lose.
+
+The live runner is limited to USDT-quoted Spot pairs, long-only, no leverage/futures, one configured symbol, and a maximum allocation fraction capped at 25% (default 10%). It tracks only positions opened by this bot and refuses to automatically sell pre-existing holdings. It estimates equity from the traded base asset and quote balance; this is not a full account NAV calculation. State is stored locally in `data/live_state.json`, so run only one instance at a time and protect that machine and state file. API errors, partial fills, exchange rule changes, outages, or state loss can still cause losses or require manual intervention.
+
+**Do not use GitHub Actions as the live trading host.** Use a secured, always-on runtime only after paper validation. The bot is software, not a guarantee of profit or capital preservation.
