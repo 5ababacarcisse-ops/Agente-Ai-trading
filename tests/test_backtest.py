@@ -52,3 +52,20 @@ def test_backtest_rejects_invalid_close_prices(bad_price):
 def test_backtest_rejects_nonfinite_costs():
     with pytest.raises(ValueError, match="finite"):
         backtest_sma_crossover(candles(range(1, 40)), fee_fraction=float("nan"))
+
+
+
+def test_backtest_can_score_only_out_of_sample_window():
+    prices = [100.0 + i for i in range(50)]
+    data = candles(prices)
+    result = backtest_sma_crossover(
+        data, initial_cash=400, fast_window=3, slow_window=8,
+        fee_fraction=0, slippage_fraction=0, start_index=30,
+    )
+    assert result.buy_hold_return_fraction == pytest.approx(prices[-1] / prices[29] - 1)
+    assert result.final_equity > 400
+
+
+def test_backtest_rejects_invalid_start_index():
+    with pytest.raises(ValueError, match="start_index"):
+        backtest_sma_crossover(candles(range(1, 40)), start_index=0)
