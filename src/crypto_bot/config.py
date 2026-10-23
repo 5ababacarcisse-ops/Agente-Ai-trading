@@ -29,6 +29,7 @@ class BotConfig:
     slippage_fraction: float = 0.0005
     poll_seconds: int = 60
     live_enabled: bool = False
+    testnet: bool = True
     api_key: str = ""
     api_secret: str = ""
     live_confirmation: str = ""
@@ -48,6 +49,7 @@ class BotConfig:
             slippage_fraction=float(os.getenv("SLIPPAGE_FRACTION", "0.0005")),
             poll_seconds=int(os.getenv("POLL_SECONDS", "60")),
             live_enabled=_bool_env("LIVE_TRADING_ENABLED", False),
+            testnet=_bool_env("BINANCE_TESTNET", True),
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             live_confirmation=os.getenv("LIVE_TRADING_CONFIRMATION", ""),
