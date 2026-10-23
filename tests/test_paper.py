@@ -11,3 +11,11 @@ def test_paper_buy_and_sell_with_fees(tmp_path):
     portfolio.sell(price=110, fee_fraction=0.001, candle_id=2)
     assert portfolio.state.base_quantity == 0
     assert portfolio.state.cash == pytest.approx(409.79)
+
+
+
+def test_paper_state_rejects_nonfinite_balance(tmp_path):
+    path = tmp_path / "state.json"
+    path.write_text('{"cash": NaN}', encoding="utf-8")
+    with pytest.raises(RuntimeError, match="refusing to reset"):
+        PaperPortfolio(str(path), initial_cash=400)
