@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 
 from crypto_bot.config import BotConfig
 
@@ -33,6 +34,9 @@ def validate_live_order(
         return OrderDecision(False, "unsupported side")
     if symbol != config.symbol:
         return OrderDecision(False, "symbol mismatch")
+    numeric_values = (current_equity, free_quote_balance, day_start_equity, last_price)
+    if any(not isfinite(value) for value in numeric_values):
+        return OrderDecision(False, "non-finite balance or price")
     if min(current_equity, free_quote_balance, day_start_equity) < 0 or last_price <= 0:
         return OrderDecision(False, "invalid balance or price")
     loss_fraction = (
@@ -40,6 +44,8 @@ def validate_live_order(
         if day_start_equity > 0 else 1.0
     )
     threshold = daily_loss_fraction if daily_loss_fraction is not None else config.max_daily_loss_fraction
+    if not isfinite(threshold) or not 0 < threshold <= 0.01:
+        return OrderDecision(False, "invalid daily loss threshold")
     if loss_fraction >= threshold:
         return OrderDecision(False, "daily loss threshold reached")
     if side == "BUY":
