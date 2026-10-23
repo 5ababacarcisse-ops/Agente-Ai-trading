@@ -51,7 +51,7 @@ def _format_quote_amount(amount: float) -> str:
 
 
 def run_paper(config: BotConfig) -> None:
-    portfolio = PaperPortfolio(path=os.getenv("PAPER_STATE_PATH", "data/paper_state.json"), initial_cash=float(os.getenv("PAPER_INITIAL_CASH", "400")))
+    portfolio = PaperPortfolio(path=os.getenv("PAPER_STATE_PATH", "data/paper_state.json"), initial_cash=config.initial_cash)
     LOG.warning("PAPER MODE: simulated balance only; no live orders can be sent.")
     while not STOP:
         candles = fetch_klines(config.symbol, config.interval, config.candles)
