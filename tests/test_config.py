@@ -1,6 +1,6 @@
 import pytest
 
-from crypto_bot.config import BotConfig, LIVE_CONFIRMATION
+from crypto_bot.config import BotConfig, LIVE_CONFIRMATION, MAINNET_CONFIRMATION
 from crypto_bot.live_guard import validate_live_order
 
 
@@ -60,3 +60,20 @@ def test_allocation_cap_is_ten_percent():
 def test_testnet_is_enabled_by_default():
     config = BotConfig()
     assert config.testnet is True
+
+
+
+def test_mainnet_requires_separate_confirmation():
+    config = BotConfig(mode="live", live_enabled=True, testnet=False,
+                       api_key="k", api_secret="s",
+                       live_confirmation=LIVE_CONFIRMATION)
+    with pytest.raises(ValueError, match="MAINNET_TRADING_CONFIRMATION"):
+        config.validate()
+
+
+def test_mainnet_accepts_only_exact_confirmation():
+    config = BotConfig(mode="live", live_enabled=True, testnet=False,
+                       api_key="k", api_secret="s",
+                       live_confirmation=LIVE_CONFIRMATION,
+                       mainnet_confirmation=MAINNET_CONFIRMATION)
+    config.validate()
