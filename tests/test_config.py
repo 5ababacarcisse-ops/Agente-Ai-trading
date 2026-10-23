@@ -42,3 +42,16 @@ def test_order_guard_enforces_daily_loss():
         free_quote_balance=390, day_start_equity=400, last_price=100,
     )
     assert not decision.allowed
+
+
+def test_live_mode_restricts_symbols():
+    config = BotConfig(mode="live", symbol="DOGEUSDT", live_enabled=True,
+                       api_key="k", api_secret="s", live_confirmation=LIVE_CONFIRMATION)
+    with pytest.raises(ValueError, match="BTCUSDT or ETHUSDT"):
+        config.validate()
+
+
+def test_allocation_cap_is_ten_percent():
+    config = BotConfig(max_allocation_fraction=0.11)
+    with pytest.raises(ValueError, match="0.10"):
+        config.validate()
