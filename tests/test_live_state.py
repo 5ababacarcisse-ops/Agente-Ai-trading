@@ -33,3 +33,11 @@ def test_pending_order_intent_survives_restart(tmp_path):
 
     restarted = LiveStateStore(str(path))
     assert restarted.state.pending_order == "BUY BTCUSDT candle=123"
+
+
+
+def test_live_state_rejects_nonfinite_position(tmp_path):
+    path = tmp_path / "live_state.json"
+    path.write_text('{"owned_quantity": NaN}', encoding="utf-8")
+    with pytest.raises(RuntimeError, match="refusing to trade"):
+        LiveStateStore(str(path))
