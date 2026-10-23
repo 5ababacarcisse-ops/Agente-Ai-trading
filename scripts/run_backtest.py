@@ -51,6 +51,7 @@ def main():
     print(f"Final simulated equity: {result.final_equity:.2f} USDT")
     print(f"Total return: {result.total_return_fraction * 100:.2f}%")
     print(f"Maximum drawdown: {result.max_drawdown_fraction * 100:.2f}%")
+    print(f"Buy-and-hold benchmark: {result.buy_hold_return_fraction * 100:.2f}%")
     print("Research only: past results do not predict future returns.")
 
 
