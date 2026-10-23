@@ -15,6 +15,8 @@ A Python research and trading project for Binance Spot. Paper mode is the defaul
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
+ruff check src scripts tests
+python -m compileall -q src scripts
 PYTHONPATH=src pytest -q
 ```
 
