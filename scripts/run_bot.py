@@ -133,11 +133,16 @@ def run_live(config: BotConfig) -> None:
         balances = {r["asset"]: float(r.get("free", 0)) + float(r.get("locked", 0))
                     for r in account.get("balances", [])}
         free_balances = {r["asset"]: float(r.get("free", 0)) for r in account.get("balances", [])}
+        if (any(not isfinite(value) or value < 0 for value in balances.values())
+                or any(not isfinite(value) or value < 0 for value in free_balances.values())):
+            raise RuntimeError("Binance returned invalid balances; refusing to trade")
         free_quote = free_balances.get(quote_asset, 0.0)
         free_base = free_balances.get(base_asset, 0.0)
         # Approximate account equity from the traded base asset and quote balance.
         # Other assets are deliberately excluded, so this is not total account NAV.
         equity = balances.get(quote_asset, 0.0) + balances.get(base_asset, 0.0) * last.close
+        if not isfinite(equity) or equity < 0:
+            raise RuntimeError("Calculated account equity is invalid; refusing to trade")
         state_store.roll_day(equity)
         state = state_store.state
         day_loss = max(0.0, (state.day_start_equity - equity) / state.day_start_equity) if state.day_start_equity > 0 else 0.0
