@@ -5,6 +5,7 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from math import isfinite
 from pathlib import Path
 
 
@@ -30,7 +31,13 @@ class PaperPortfolio:
             return PaperState(cash=self.initial_cash, day_start_equity=self.initial_cash)
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-            return PaperState(**data)
+            state = PaperState(**data)
+            numeric_values = (state.cash, state.base_quantity, state.day_start_equity)
+            if (any(not isfinite(value) for value in numeric_values)
+                    or state.cash < 0 or state.base_quantity < 0 or state.day_start_equity < 0
+                    or state.last_signal_candle < 0 or not isinstance(state.halted, bool)):
+                raise ValueError("invalid values in paper state")
+            return state
         except (OSError, ValueError, TypeError) as exc:
             raise RuntimeError(f"Paper state is unreadable; refusing to reset it silently: {exc}") from exc
 
