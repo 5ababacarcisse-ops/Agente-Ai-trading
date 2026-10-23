@@ -7,6 +7,7 @@ Do not run live mode until you've reviewed all source code and tested paper mode
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import time
 from decimal import Decimal, ROUND_DOWN
@@ -51,7 +52,7 @@ def _format_quantity(quantity: float, step_size: str) -> str:
 
 
 def run_paper(config: BotConfig) -> None:
-    portfolio = PaperPortfolio(initial_cash=400.0)
+    portfolio = PaperPortfolio(path=os.getenv("PAPER_STATE_PATH", "data/paper_state.json"), initial_cash=float(os.getenv("PAPER_INITIAL_CASH", "400")))
     LOG.warning("PAPER MODE: simulated balance only; no live orders can be sent.")
     while not STOP:
         candles = fetch_klines(config.symbol, config.interval, config.candles)
@@ -93,7 +94,7 @@ def run_live(config: BotConfig) -> None:
     # Config validation must already have enforced all explicit live gates.
     client = BinanceSpotClient(config.api_key, config.api_secret)
     base_asset, quote_asset = _split_symbol(config.symbol)
-    state_store = LiveStateStore()
+    state_store = LiveStateStore(os.getenv("LIVE_STATE_PATH", "data/live_state.json"))
     info = client.exchange_info(config.symbol)
     symbols = info.get("symbols", [])
     if not symbols or symbols[0].get("status") != "TRADING" or symbols[0].get("isSpotTradingAllowed") is False:
@@ -151,8 +152,12 @@ def run_live(config: BotConfig) -> None:
                 amount = min(decision.quote_amount, free_quote)
                 if amount < min_notional:
                     LOG.info("BUY skipped: order value %.2f is below exchange minimum %.2f", amount, min_notional)
+                    state.last_signal_candle = last.open_time
+                    state_store.save()
                 elif free_base > 0:
                     LOG.warning("BUY skipped: account already has %s outside this bot's ownership ledger", base_asset)
+                    state.last_signal_candle = last.open_time
+                    state_store.save()
                 else:
                     response = client.market_buy_quote(config.symbol, f"{amount:.2f}")
                     executed = float(response.get("executedQty", 0))
@@ -173,6 +178,8 @@ def run_live(config: BotConfig) -> None:
             rounded_quantity = float(quantity_text)
             if rounded_quantity < min_qty or rounded_quantity * last.close < min_notional:
                 LOG.warning("SELL skipped: bot-owned quantity below exchange minimum; manual review needed")
+                state.last_signal_candle = last.open_time
+                state_store.save()
             else:
                 response = client.market_sell_quantity(config.symbol, quantity_text)
                 executed = float(response.get("executedQty", 0))
