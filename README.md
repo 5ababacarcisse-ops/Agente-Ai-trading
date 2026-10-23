@@ -6,7 +6,7 @@ A Python research and trading project for Binance Spot. Paper mode is the defaul
 - Fetch public Binance Spot candles without credentials.
 - Run a simple long-only SMA crossover backtest with fee/slippage assumptions.
 - Run a continuous local paper simulation with persistent local portfolio state.
-- Optional live Spot order module, defaulting to Binance Spot Testnet when live mode is explicitly enabled; mainnet requires an additional explicit setting. It has a bot-owned position ledger, symbol filters, no leverage, and a daily loss guard.
+- Optional live Spot order module, defaulting to Binance Spot Testnet when live mode is explicitly enabled; mainnet requires an additional explicit setting. It has a bot-owned position ledger, symbol filters, no leverage, and a daily entry halt that still permits exits from existing positions.
 - GitHub Actions runs automated tests; it is not a continuous trading host.
 
 ## Setup
