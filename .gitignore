@@ -8,5 +8,7 @@ __pycache__/
 .env.*
 !.env.example
 data/private/
+data/*.json
+data/*.json.tmp
 logs/
 *.sqlite3
