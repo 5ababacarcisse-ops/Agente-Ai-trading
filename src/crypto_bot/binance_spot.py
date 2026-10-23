@@ -75,6 +75,10 @@ class BinanceSpotClient:
     def exchange_info(self, symbol: str):
         return self._request("GET", "/api/v3/exchangeInfo", {"symbol": symbol})
 
+    def open_orders(self, symbol: str):
+        """Return open orders for one symbol; caller must reconcile before trading."""
+        return self._request("GET", "/api/v3/openOrders", {"symbol": symbol}, signed=True)
+
     def market_buy_quote(self, symbol: str, quote_order_qty: str):
         """Submit a market BUY. Caller must enforce live gates and sizing."""
         if float(quote_order_qty) <= 0:
