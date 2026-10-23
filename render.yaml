@@ -1,0 +1,40 @@
+services:
+  - type: worker
+    name: agente-ai-trading-paper
+    runtime: python
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=src python scripts/run_bot.py
+    maxShutdownDelaySeconds: 30
+    disk:
+      name: trading-bot-state
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: TRADING_MODE
+        value: paper
+      - key: TRADING_SYMBOL
+        value: BTCUSDT
+      - key: TRADING_INTERVAL
+        value: 1h
+      - key: TRADING_CANDLES
+        value: "300"
+      - key: FAST_WINDOW
+        value: "10"
+      - key: SLOW_WINDOW
+        value: "30"
+      - key: MAX_ALLOCATION_FRACTION
+        value: "0.10"
+      - key: MAX_DAILY_LOSS_FRACTION
+        value: "0.01"
+      - key: POLL_SECONDS
+        value: "60"
+      - key: PAPER_INITIAL_CASH
+        value: "400"
+      - key: PAPER_STATE_PATH
+        value: /var/data/paper_state.json
+      - key: LIVE_STATE_PATH
+        value: /var/data/live_state.json
+      - key: LIVE_TRADING_ENABLED
+        value: "false"
