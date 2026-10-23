@@ -147,5 +147,9 @@ def fetch_historical_klines(
             raise RuntimeError("Historical pagination made no progress; refusing to loop")
         cursor = next_cursor
 
+    if len(all_candles) >= max_candles and cursor < end:
+        raise RuntimeError(
+            f"Historical request exceeds the {max_candles}-candle safety cap; reduce --days or use a longer interval"
+        )
     all_candles.sort(key=lambda candle: candle.open_time)
     return all_candles
