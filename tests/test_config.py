@@ -77,3 +77,26 @@ def test_mainnet_accepts_only_exact_confirmation():
                        live_confirmation=LIVE_CONFIRMATION,
                        mainnet_confirmation=MAINNET_CONFIRMATION)
     config.validate()
+
+
+def test_order_guard_rejects_nonfinite_balance():
+    config = BotConfig(mode="live", live_enabled=True, api_key="k", api_secret="s",
+                       live_confirmation=LIVE_CONFIRMATION)
+    decision = validate_live_order(
+        config, side="BUY", symbol="BTCUSDT", current_equity=float("nan"),
+        free_quote_balance=400, day_start_equity=400, last_price=100,
+    )
+    assert not decision.allowed
+    assert "non-finite" in decision.reason
+
+
+def test_order_guard_rejects_invalid_daily_loss_threshold():
+    config = BotConfig(mode="live", live_enabled=True, api_key="k", api_secret="s",
+                       live_confirmation=LIVE_CONFIRMATION)
+    decision = validate_live_order(
+        config, side="BUY", symbol="BTCUSDT", current_equity=400,
+        free_quote_balance=400, day_start_equity=400, last_price=100,
+        daily_loss_fraction=float("nan"),
+    )
+    assert not decision.allowed
+    assert "threshold" in decision.reason
