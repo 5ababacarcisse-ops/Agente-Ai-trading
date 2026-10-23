@@ -22,3 +22,14 @@ def test_corrupt_live_state_refuses_to_reset(tmp_path):
     path.write_text("{not json", encoding="utf-8")
     with pytest.raises(RuntimeError, match="refusing to trade"):
         LiveStateStore(str(path))
+
+
+
+def test_pending_order_intent_survives_restart(tmp_path):
+    path = tmp_path / "live_state.json"
+    store = LiveStateStore(str(path))
+    store.state.pending_order = "BUY BTCUSDT candle=123"
+    store.save()
+
+    restarted = LiveStateStore(str(path))
+    assert restarted.state.pending_order == "BUY BTCUSDT candle=123"
