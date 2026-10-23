@@ -117,13 +117,10 @@ def run_live(config: BotConfig) -> None:
         last = closed[-1]
         signal = latest_signal([c.close for c in closed], config.fast_window, config.slow_window)
         state = state_store.state
-        if last.open_time <= state.last_signal_candle:
-            for _ in range(config.poll_seconds):
-                if STOP:
-                    break
-                time.sleep(1)
-            continue
+        is_new_candle = last.open_time > state.last_signal_candle
 
+        # Refresh account equity every poll so the daily loss guard can trip
+        # during a forming candle; order decisions remain candle-gated.
         account = client.account()
         balances = {r["asset"]: float(r.get("free", 0)) + float(r.get("locked", 0))
                     for r in account.get("balances", [])}
@@ -142,7 +139,7 @@ def run_live(config: BotConfig) -> None:
             LOG.error("Daily loss threshold reached (%.2f%%); new orders halted for UTC day.", day_loss * 100)
         if state.halted:
             LOG.warning("Trading halted for today; signal=%s equity_estimate=%.2f", signal.action, equity)
-        elif signal.action == "buy" and state.owned_quantity <= 0:
+        elif is_new_candle and signal.action == "buy" and state.owned_quantity <= 0:
             decision = validate_live_order(
                 config, side="BUY", symbol=config.symbol, current_equity=equity,
                 free_quote_balance=free_quote, day_start_equity=state.day_start_equity,
@@ -172,7 +169,7 @@ def run_live(config: BotConfig) -> None:
                 LOG.warning("BUY blocked: %s", decision.reason)
                 state.last_signal_candle = last.open_time
                 state_store.save()
-        elif signal.action == "sell" and state.owned_quantity > 0:
+        elif is_new_candle and signal.action == "sell" and state.owned_quantity > 0:
             quantity = min(state.owned_quantity, free_base)
             quantity_text = _format_quantity(quantity, step_size)
             rounded_quantity = float(quantity_text)
@@ -190,11 +187,14 @@ def run_live(config: BotConfig) -> None:
                 state_store.save()
                 LOG.warning("LIVE SELL filled/partial | orderId=%s qty=%s remaining_owned=%.8f status=%s",
                             response.get("orderId"), executed, state.owned_quantity, response.get("status"))
-        else:
+        elif is_new_candle:
             LOG.info("LIVE no order | signal=%s reason=%s equity_estimate=%.2f owned_qty=%.8f",
                      signal.action, signal.reason, equity, state.owned_quantity)
             state.last_signal_candle = last.open_time
             state_store.save()
+        else:
+            LOG.info("LIVE monitoring | signal=%s equity_estimate=%.2f day_loss=%.2f%% halted=%s",
+                     signal.action, equity, day_loss * 100, state.halted)
         for _ in range(config.poll_seconds):
             if STOP:
                 break
