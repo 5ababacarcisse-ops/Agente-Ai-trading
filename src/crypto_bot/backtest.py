@@ -40,6 +40,7 @@ def backtest_sma_crossover(
     slow_window: int = 30,
     fee_fraction: float = 0.001,
     slippage_fraction: float = 0.0005,
+    start_index: int = 1,
 ) -> BacktestResult:
     """Backtest a long-only SMA strategy with costs and no leverage.
 
@@ -57,6 +58,8 @@ def backtest_sma_crossover(
         raise ValueError("fee and slippage must be finite and in [0, 1)")
     if len(candles) < slow_window + 1:
         raise ValueError("not enough candles for the selected windows")
+    if start_index < 1 or start_index >= len(candles):
+        raise ValueError("start_index must be between 1 and len(candles) - 1")
     closes = [float(c.close) for c in candles]
     if any(not isfinite(price) or price <= 0 for price in closes):
         raise ValueError("all close prices must be finite and positive")
@@ -74,9 +77,11 @@ def backtest_sma_crossover(
     trades = 0
     cost_fraction = fee_fraction + slippage_fraction
 
-    for i in range(1, len(closes)):
+    for i in range(start_index, len(closes)):
         position = signals[i - 1]
-        previous_position = signals[i - 2] if i >= 2 else 0
+        # At an out-of-sample boundary, start with cash and enter only based
+        # on the signal available at the prior close.
+        previous_position = signals[i - 2] if i > start_index else 0
         if position != previous_position:
             trades += 1
             equity *= 1.0 - cost_fraction
@@ -91,7 +96,7 @@ def backtest_sma_crossover(
         final_equity=equity,
         total_return_fraction=equity / initial_cash - 1.0,
         max_drawdown_fraction=max_drawdown,
-        buy_hold_return_fraction=closes[-1] / closes[0] - 1.0,
+        buy_hold_return_fraction=closes[-1] / closes[start_index - 1] - 1.0,
         trades=trades,
         candles_used=len(candles),
     )
