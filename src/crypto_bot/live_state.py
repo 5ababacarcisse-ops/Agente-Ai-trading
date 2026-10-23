@@ -9,6 +9,7 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from math import isfinite
 from pathlib import Path
 
 
@@ -31,7 +32,12 @@ class LiveStateStore:
         if not self.path.exists():
             return LiveState()
         try:
-            return LiveState(**json.loads(self.path.read_text(encoding="utf-8")))
+            state = LiveState(**json.loads(self.path.read_text(encoding="utf-8")))
+            if (not isfinite(state.owned_quantity) or state.owned_quantity < 0
+                    or not isfinite(state.day_start_equity) or state.day_start_equity < 0
+                    or state.last_signal_candle < 0 or not isinstance(state.pending_order, str)):
+                raise ValueError("invalid values in live state")
+            return state
         except (OSError, ValueError, TypeError) as exc:
             raise RuntimeError(f"Live state is unreadable; refusing to trade: {exc}") from exc
 
