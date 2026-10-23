@@ -93,6 +93,11 @@ def run_live(config: BotConfig) -> None:
     client = BinanceSpotClient(config.api_key, config.api_secret, base_url=base_url)
     base_asset, quote_asset = _split_symbol(config.symbol)
     state_store = LiveStateStore(os.getenv("LIVE_STATE_PATH", "data/live_state.json"))
+    if state_store.state.pending_order:
+        raise RuntimeError(
+            f"Unresolved order intent ({state_store.state.pending_order}); inspect Binance order/trade history, "
+            "reconcile balances, and clear it manually only after verification. Refusing to trade."
+        )
     info = client.exchange_info(config.symbol)
     symbols = info.get("symbols", [])
     if not symbols or symbols[0].get("status") != "TRADING" or symbols[0].get("isSpotTradingAllowed") is False:
@@ -154,12 +159,17 @@ def run_live(config: BotConfig) -> None:
                     state.last_signal_candle = last.open_time
                     state_store.save()
                 else:
+                    # Persist intent before sending. If the network fails after Binance accepts
+                    # the order, the next process start will halt for manual reconciliation.
+                    state.pending_order = f"BUY {config.symbol} candle={last.open_time}"
+                    state_store.save()
                     response = client.market_buy_quote(config.symbol, _format_quote_amount(amount))
                     executed = float(response.get("executedQty", 0))
                     if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or executed <= 0:
-                        raise RuntimeError("Buy order was not confirmed; inspect Binance order history before restarting")
+                        raise RuntimeError("Buy order was not confirmed; pending intent retained. Inspect Binance order history.")
                     state.owned_quantity = executed
                     state.last_signal_candle = last.open_time
+                    state.pending_order = ""
                     state_store.save()
                     LOG.warning("LIVE BUY filled/partial | orderId=%s qty=%s status=%s",
                                 response.get("orderId"), executed, response.get("status"))
@@ -176,12 +186,15 @@ def run_live(config: BotConfig) -> None:
                 state.last_signal_candle = last.open_time
                 state_store.save()
             else:
+                state.pending_order = f"SELL {config.symbol} candle={last.open_time}"
+                state_store.save()
                 response = client.market_sell_quantity(config.symbol, quantity_text)
                 executed = float(response.get("executedQty", 0))
                 if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or executed <= 0:
-                    raise RuntimeError("Sell order was not confirmed; inspect Binance order history before restarting")
+                    raise RuntimeError("Sell order was not confirmed; pending intent retained. Inspect Binance order history.")
                 state.owned_quantity = max(0.0, state.owned_quantity - executed)
                 state.last_signal_candle = last.open_time
+                state.pending_order = ""
                 state_store.save()
                 LOG.warning("LIVE SELL filled/partial | orderId=%s qty=%s remaining_owned=%.8f status=%s",
                             response.get("orderId"), executed, state.owned_quantity, response.get("status"))
