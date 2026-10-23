@@ -30,13 +30,6 @@ def _stop(_signum, _frame):
     STOP = True
 
 
-def _free_balance(account: dict, asset: str) -> float:
-    for row in account.get("balances", []):
-        if row.get("asset") == asset:
-            return float(row.get("free", 0))
-    return 0.0
-
-
 def _split_symbol(symbol: str) -> tuple[str, str]:
     # Intentionally restrict the initial live release to USDT-quoted markets.
     if not symbol.endswith("USDT") or len(symbol) <= 4:
@@ -49,6 +42,11 @@ def _format_quantity(quantity: float, step_size: str) -> str:
     value = Decimal(str(quantity))
     rounded = (value / step).to_integral_value(rounding=ROUND_DOWN) * step
     return format(rounded, "f")
+
+
+def _format_quote_amount(amount: float) -> str:
+    # USDT quoteOrderQty is rounded down to cents to avoid exceeding free balance.
+    return format(Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_DOWN), "f")
 
 
 def run_paper(config: BotConfig) -> None:
@@ -70,10 +68,9 @@ def run_paper(config: BotConfig) -> None:
             portfolio.save()
             LOG.error("Daily paper loss threshold reached; trading halted for the UTC day.")
         elif not state.halted and last.open_time > state.last_signal_candle:
-            fee_and_slippage = config.fee_fraction + config.slippage_fraction
             if signal.action == "buy" and state.base_quantity == 0:
                 allocation = min(equity * config.max_allocation_fraction, state.cash)
-                portfolio.buy(price * (1 + config.slippage_fraction), allocation, fee_and_slippage, last.open_time)
+                portfolio.buy(price * (1 + config.slippage_fraction), allocation, config.fee_fraction, last.open_time)
                 LOG.info("PAPER BUY signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
             elif signal.action == "sell" and state.base_quantity > 0:
                 portfolio.sell(price * (1 - config.slippage_fraction), config.fee_fraction, last.open_time)
@@ -156,7 +153,7 @@ def run_live(config: BotConfig) -> None:
                     state.last_signal_candle = last.open_time
                     state_store.save()
                 else:
-                    response = client.market_buy_quote(config.symbol, f"{amount:.2f}")
+                    response = client.market_buy_quote(config.symbol, _format_quote_amount(amount))
                     executed = float(response.get("executedQty", 0))
                     if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or executed <= 0:
                         raise RuntimeError("Buy order was not confirmed; inspect Binance order history before restarting")
