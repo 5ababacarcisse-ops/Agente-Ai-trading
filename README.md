@@ -52,7 +52,7 @@ If you later choose to enable live trading, configure these only in a secure run
 - `BINANCE_TESTNET=true` (default; use Testnet credentials for dry execution tests)
 - `BINANCE_API_KEY` and `BINANCE_API_SECRET`
 
-For real funds, `BINANCE_TESTNET=false` is an additional explicit switch. Do not set it until the testnet workflow and paper results have been reviewed.
+For real funds, `BINANCE_TESTNET=false` is an additional explicit switch, and the separate `MAINNET_TRADING_CONFIRMATION=I_ACCEPT_MAINNET_REAL_FUNDS_RISK` gate is also required. Do not set either until the Testnet workflow and paper results have been reviewed.
 
 Create a dedicated Binance API key with **Spot trading only**, withdrawals disabled, and IP restrictions where supported. Never send API keys to ChatGPT or put them in GitHub source files. Start with a small amount you can afford to lose.
 
