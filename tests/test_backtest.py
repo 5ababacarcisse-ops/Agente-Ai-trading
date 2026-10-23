@@ -37,4 +37,5 @@ def test_backtest_accounts_for_fees_and_returns_metrics():
     assert free.final_equity > 400
     assert with_costs.final_equity < free.final_equity
     assert with_costs.candles_used == len(data)
+    assert with_costs.buy_hold_return_fraction == pytest.approx(prices[-1] / prices[0] - 1)
     assert 0 <= with_costs.max_drawdown_fraction <= 1
