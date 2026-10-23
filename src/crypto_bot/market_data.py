@@ -37,6 +37,7 @@ def fetch_klines(
     interval: str = "1h",
     limit: int = 500,
     timeout: float = 15.0,
+    base_url: str = "https://api.binance.com",
 ) -> list[Candle]:
     """Fetch up to 1000 recent candles from Binance's public REST endpoint."""
     symbol = symbol.strip().upper()
@@ -47,7 +48,8 @@ def fetch_klines(
     if not 1 <= limit <= 1000:
         raise ValueError("limit must be between 1 and 1000")
 
-    url = f"{BASE_URL}?{urlencode({'symbol': symbol, 'interval': interval, 'limit': limit})}"
+    endpoint = base_url.rstrip("/") + "/api/v3/klines"
+    url = f"{endpoint}?{urlencode({'symbol': symbol, 'interval': interval, 'limit': limit})}"
     request = Request(url, headers={"User-Agent": "research-paper-bot/0.1"})
     try:
         with urlopen(request, timeout=timeout) as response:
