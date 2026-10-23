@@ -100,3 +100,10 @@ def test_order_guard_rejects_invalid_daily_loss_threshold():
     )
     assert not decision.allowed
     assert "threshold" in decision.reason
+
+
+@pytest.mark.parametrize("bad_cash", [0.0, -1.0, float("nan"), float("inf")])
+def test_config_rejects_invalid_paper_starting_cash(bad_cash):
+    config = BotConfig(initial_cash=bad_cash)
+    with pytest.raises(ValueError, match="PAPER_INITIAL_CASH"):
+        config.validate()
