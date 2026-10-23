@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Sequence
 
 from crypto_bot.backtest import sma
@@ -20,6 +21,8 @@ def latest_signal(closes: Sequence[float], fast_window: int = 10, slow_window: i
         raise ValueError("require 1 <= fast_window < slow_window")
     if len(closes) < slow_window + 1:
         raise ValueError("not enough closes for a crossover signal")
+    if any(not isfinite(float(price)) or float(price) <= 0 for price in closes):
+        raise ValueError("all closes must be finite and positive")
     fast = sma(closes, fast_window)
     slow = sma(closes, slow_window)
     i = len(closes) - 1
