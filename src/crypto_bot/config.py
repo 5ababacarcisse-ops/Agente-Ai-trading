@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 
 LIVE_CONFIRMATION = "I_UNDERSTAND_REAL_MONEY_RISK"
+MAINNET_CONFIRMATION = "I_ACCEPT_MAINNET_REAL_FUNDS_RISK"
 
 
 def _bool_env(name: str, default: bool = False) -> bool:
@@ -33,6 +34,7 @@ class BotConfig:
     api_key: str = ""
     api_secret: str = ""
     live_confirmation: str = ""
+    mainnet_confirmation: str = ""
 
     @classmethod
     def from_env(cls) -> "BotConfig":
@@ -53,6 +55,7 @@ class BotConfig:
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             live_confirmation=os.getenv("LIVE_TRADING_CONFIRMATION", ""),
+            mainnet_confirmation=os.getenv("MAINNET_TRADING_CONFIRMATION", ""),
         )
 
     def validate(self) -> None:
@@ -81,3 +84,5 @@ class BotConfig:
                 raise ValueError("Live trading blocked: LIVE_TRADING_CONFIRMATION is missing or incorrect")
             if not self.api_key or not self.api_secret:
                 raise ValueError("Live trading requires BINANCE_API_KEY and BINANCE_API_SECRET")
+            if not self.testnet and self.mainnet_confirmation != MAINNET_CONFIRMATION:
+                raise ValueError("Mainnet blocked: MAINNET_TRADING_CONFIRMATION is missing or incorrect")
