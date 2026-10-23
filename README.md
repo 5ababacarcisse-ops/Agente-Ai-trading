@@ -39,6 +39,8 @@ PYTHONPATH=src python scripts/run_bot.py
 
 Paper state is written to `data/paper_state.json`; it is ignored by Git. It is a simple simulation and should not be interpreted as an estimate of future returns.
 
+An optional Render background-worker Blueprint is included in `render.yaml`. It is configured for paper mode only and attaches persistent storage. Applying it may create billable infrastructure (Starter worker + disk); **nothing has been deployed automatically**. Review current Render pricing before creating resources.
+
 ## Live trading: intentionally gated
 
 Live trading uses real money. Do not enable it until you have reviewed the source and run paper mode long enough to understand losses, drawdowns, fees, and failure modes. Backtests cannot guarantee future results.
@@ -51,6 +53,6 @@ If you later choose to enable live trading, configure these only in a secure run
 
 Create a dedicated Binance API key with **Spot trading only**, withdrawals disabled, and IP restrictions where supported. Never send API keys to ChatGPT or put them in GitHub source files. Start with a small amount you can afford to lose.
 
-The live runner is limited to USDT-quoted Spot pairs, long-only, no leverage/futures, one configured symbol, and a maximum allocation fraction capped at 25% (default 10%). It tracks only positions opened by this bot and refuses to automatically sell pre-existing holdings. It estimates equity from the traded base asset and quote balance; this is not a full account NAV calculation. State is stored locally in `data/live_state.json`, so run only one instance at a time and protect that machine and state file. API errors, partial fills, exchange rule changes, outages, or state loss can still cause losses or require manual intervention.
+The live runner is limited to USDT-quoted Spot pairs, long-only, no leverage/futures, one configured symbol, and a maximum allocation fraction capped at 25% (default 10%). It tracks only positions opened by this bot and refuses to automatically sell pre-existing holdings. It estimates equity from the traded base asset and quote balance; this is not a full account NAV calculation. State is stored locally in `data/live_state.json` (or `LIVE_STATE_PATH`), so run only one instance at a time and protect that machine and state file. API errors, partial fills, exchange rule changes, outages, or state loss can still cause losses or require manual intervention.
 
 **Do not use GitHub Actions as the live trading host.** Use a secured, always-on runtime only after paper validation. The bot is software, not a guarantee of profit or capital preservation.
