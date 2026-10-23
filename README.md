@@ -6,7 +6,7 @@ A Python research and trading project for Binance Spot. Paper mode is the defaul
 - Fetch public Binance Spot candles without credentials.
 - Run a simple long-only SMA crossover backtest with fee/slippage assumptions.
 - Run a continuous local paper simulation with persistent local portfolio state.
-- Optional live Spot market orders, with explicit opt-in, a bot-owned position ledger, symbol filters, no leverage, and daily loss guard.
+- Optional live Spot order module, defaulting to Binance Spot Testnet when live mode is explicitly enabled; mainnet requires an additional explicit setting. It has a bot-owned position ledger, symbol filters, no leverage, and a daily loss guard.
 - GitHub Actions runs automated tests; it is not a continuous trading host.
 
 ## Setup
@@ -49,7 +49,10 @@ If you later choose to enable live trading, configure these only in a secure run
 - `TRADING_MODE=live`
 - `LIVE_TRADING_ENABLED=true`
 - `LIVE_TRADING_CONFIRMATION=I_UNDERSTAND_REAL_MONEY_RISK`
+- `BINANCE_TESTNET=true` (default; use Testnet credentials for dry execution tests)
 - `BINANCE_API_KEY` and `BINANCE_API_SECRET`
+
+For real funds, `BINANCE_TESTNET=false` is an additional explicit switch. Do not set it until the testnet workflow and paper results have been reviewed.
 
 Create a dedicated Binance API key with **Spot trading only**, withdrawals disabled, and IP restrictions where supported. Never send API keys to ChatGPT or put them in GitHub source files. Start with a small amount you can afford to lose.
 
