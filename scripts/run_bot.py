@@ -89,7 +89,8 @@ def run_paper(config: BotConfig) -> None:
 
 def run_live(config: BotConfig) -> None:
     # Config validation must already have enforced all explicit live gates.
-    client = BinanceSpotClient(config.api_key, config.api_secret)
+    base_url = "https://testnet.binance.vision" if config.testnet else "https://api.binance.com"
+    client = BinanceSpotClient(config.api_key, config.api_secret, base_url=base_url)
     base_asset, quote_asset = _split_symbol(config.symbol)
     state_store = LiveStateStore(os.getenv("LIVE_STATE_PATH", "data/live_state.json"))
     info = client.exchange_info(config.symbol)
@@ -104,11 +105,11 @@ def run_live(config: BotConfig) -> None:
     min_notional = float(min_notional_filter.get("minNotional", "0"))
     if not step_size:
         raise RuntimeError("Could not read LOT_SIZE step size; refusing to trade")
-    LOG.critical("LIVE MODE enabled. Spot only; no leverage, no withdrawals; allocation cap %.1f%%.",
-                 config.max_allocation_fraction * 100)
+    LOG.critical("LIVE EXECUTION enabled on %s. Spot only; no leverage, no withdrawals; allocation cap %.1f%%.",
+                 "TESTNET" if config.testnet else "MAINNET", config.max_allocation_fraction * 100)
     LOG.critical("Real funds are at risk. Stop with Ctrl+C.")
     while not STOP:
-        candles = fetch_klines(config.symbol, config.interval, config.candles)
+        candles = fetch_klines(config.symbol, config.interval, config.candles, base_url=base_url)
         # Never trade on the currently forming candle.
         closed = candles[:-1]
         last = closed[-1]
