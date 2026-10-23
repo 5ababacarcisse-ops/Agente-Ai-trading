@@ -20,10 +20,16 @@ class BinanceAPIError(RuntimeError):
 
 
 class BinanceSpotClient:
-    def __init__(self, api_key: str = "", api_secret: str = "", timeout: float = 15.0):
+    def __init__(
+        self, api_key: str = "", api_secret: str = "", timeout: float = 15.0,
+        base_url: str = "https://api.binance.com",
+    ):
+        if base_url.rstrip("/") not in {"https://api.binance.com", "https://testnet.binance.vision"}:
+            raise ValueError("base_url must be the official Binance Spot API or Spot Testnet")
         self.api_key = api_key
         self.api_secret = api_secret
         self.timeout = timeout
+        self.base_url = base_url.rstrip("/")
 
     def _request(self, method: str, path: str, params: dict | None = None, signed: bool = False):
         params = dict(params or {})
@@ -41,7 +47,7 @@ class BinanceSpotClient:
             headers["X-MBX-APIKEY"] = self.api_key
         else:
             query = urlencode(params)
-        url = "https://api.binance.com" + path
+        url = self.base_url + path
         if method.upper() == "GET" and query:
             url += "?" + query
             data = None
