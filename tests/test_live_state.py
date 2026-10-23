@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from crypto_bot.live_state import LiveStateStore
