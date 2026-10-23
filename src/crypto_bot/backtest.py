@@ -13,6 +13,7 @@ class BacktestResult:
     final_equity: float
     total_return_fraction: float
     max_drawdown_fraction: float
+    buy_hold_return_fraction: float
     trades: int
     candles_used: int
 
@@ -88,6 +89,7 @@ def backtest_sma_crossover(
         final_equity=equity,
         total_return_fraction=equity / initial_cash - 1.0,
         max_drawdown_fraction=max_drawdown,
+        buy_hold_return_fraction=closes[-1] / closes[0] - 1.0,
         trades=trades,
         candles_used=len(candles),
     )
