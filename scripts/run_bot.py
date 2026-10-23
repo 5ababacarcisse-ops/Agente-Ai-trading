@@ -75,7 +75,7 @@ def run_paper(config: BotConfig) -> None:
                 portfolio.buy(price * (1 + config.slippage_fraction), allocation, fee_and_slippage, last.open_time)
                 LOG.info("PAPER BUY signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
             elif signal.action == "sell" and state.base_quantity > 0:
-                portfolio.sell(price * (1 - config.slippage_fraction), fee_and_slippage, last.open_time)
+                portfolio.sell(price * (1 - config.slippage_fraction), config.fee_fraction, last.open_time)
                 LOG.info("PAPER SELL signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
             else:
                 state.last_signal_candle = last.open_time
