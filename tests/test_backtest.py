@@ -39,3 +39,16 @@ def test_backtest_accounts_for_fees_and_returns_metrics():
     assert with_costs.candles_used == len(data)
     assert with_costs.buy_hold_return_fraction == pytest.approx(prices[-1] / prices[0] - 1)
     assert 0 <= with_costs.max_drawdown_fraction <= 1
+
+
+@pytest.mark.parametrize("bad_price", [float("nan"), float("inf"), 0.0, -1.0])
+def test_backtest_rejects_invalid_close_prices(bad_price):
+    prices = [100.0] * 40
+    prices[-1] = bad_price
+    with pytest.raises(ValueError, match="finite and positive"):
+        backtest_sma_crossover(candles(prices), fast_window=3, slow_window=8)
+
+
+def test_backtest_rejects_nonfinite_costs():
+    with pytest.raises(ValueError, match="finite"):
+        backtest_sma_crossover(candles(range(1, 40)), fee_fraction=float("nan"))
