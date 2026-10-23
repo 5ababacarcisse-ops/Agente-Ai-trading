@@ -24,7 +24,7 @@ PYTHONPATH=src pytest -q
 PYTHONPATH=src python scripts/run_backtest.py --symbol BTCUSDT --interval 1h --limit 500 --cash 400
 ```
 
-The default costs are assumptions (0.1% fee and 0.05% slippage per position change), not guaranteed actual costs. Recent candles are only a smoke test. For longer history, use `PYTHONPATH=src python scripts/run_backtest.py --symbol BTCUSDT --interval 1h --days 365 --cash 400`. Historical downloads are capped at 100,000 candles. A proper evaluation also needs out-of-sample testing, benchmarks, and realistic execution modelling.
+The default costs are assumptions (0.1% fee and 0.05% slippage per position change), not guaranteed actual costs. Recent candles are only a smoke test. For longer history, use `PYTHONPATH=src python scripts/run_backtest.py --symbol BTCUSDT --interval 1h --days 365 --cash 400`. Historical downloads are capped at 100,000 candles. For a chronological 70/30 train/test split, run `PYTHONPATH=src python scripts/evaluate_strategy.py --symbol BTCUSDT --interval 1h --days 365 --cash 400`. The test segment reuses earlier candles only for SMA warm-up and scores returns from the split onward. This is still a basic evaluation, not proof of robustness; realistic execution, broader market regimes, and parameter sensitivity remain necessary.
 
 ## Continuous paper trading
 
