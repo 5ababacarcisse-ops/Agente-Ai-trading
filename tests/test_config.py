@@ -55,3 +55,8 @@ def test_allocation_cap_is_ten_percent():
     config = BotConfig(max_allocation_fraction=0.11)
     with pytest.raises(ValueError, match="0.10"):
         config.validate()
+
+
+def test_testnet_is_enabled_by_default():
+    config = BotConfig()
+    assert config.testnet is True
