@@ -63,18 +63,19 @@ def run_paper(config: BotConfig) -> None:
         state = portfolio.state
         equity = portfolio.equity(price)
         loss = max(0.0, (state.day_start_equity - equity) / state.day_start_equity) if state.day_start_equity else 1.0
-        if loss >= config.max_daily_loss_fraction:
+        if loss >= config.max_daily_loss_fraction and not state.halted:
             state.halted = True
             portfolio.save()
-            LOG.error("Daily paper loss threshold reached; trading halted for the UTC day.")
-        elif not state.halted and last.open_time > state.last_signal_candle:
-            if signal.action == "buy" and state.base_quantity == 0:
+            LOG.error("Daily paper loss threshold reached; new entries halted for the UTC day.")
+        if last.open_time > state.last_signal_candle:
+            if signal.action == "sell" and state.base_quantity > 0:
+                # Risk halts block new entries, never exits from an existing position.
+                portfolio.sell(price * (1 - config.slippage_fraction), config.fee_fraction, last.open_time)
+                LOG.info("PAPER SELL signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
+            elif not state.halted and signal.action == "buy" and state.base_quantity == 0:
                 allocation = min(equity * config.max_allocation_fraction, state.cash)
                 portfolio.buy(price * (1 + config.slippage_fraction), allocation, config.fee_fraction, last.open_time)
                 LOG.info("PAPER BUY signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
-            elif signal.action == "sell" and state.base_quantity > 0:
-                portfolio.sell(price * (1 - config.slippage_fraction), config.fee_fraction, last.open_time)
-                LOG.info("PAPER SELL signal | %s | close=%.4f | equity=%.2f", config.symbol, price, portfolio.equity(price))
             else:
                 state.last_signal_candle = last.open_time
                 portfolio.save()
@@ -140,8 +141,11 @@ def run_live(config: BotConfig) -> None:
             state.halted = True
             state_store.save()
             LOG.error("Daily loss threshold reached (%.2f%%); new orders halted for UTC day.", day_loss * 100)
-        if state.halted:
-            LOG.warning("Trading halted for today; signal=%s equity_estimate=%.2f", signal.action, equity)
+        if state.halted and not (is_new_candle and signal.action == "sell" and state.owned_quantity > 0):
+            LOG.warning("New entries halted for today; existing-position exits remain permitted. signal=%s equity_estimate=%.2f", signal.action, equity)
+            if is_new_candle:
+                state.last_signal_candle = last.open_time
+                state_store.save()
         elif is_new_candle and signal.action == "buy" and state.owned_quantity <= 0:
             decision = validate_live_order(
                 config, side="BUY", symbol=config.symbol, current_equity=equity,
