@@ -141,7 +141,13 @@ def run_live(config: BotConfig) -> None:
         if day_loss >= config.max_daily_loss_fraction:
             state.halted = True
             state_store.save()
-            LOG.error("Daily loss threshold reached (%.2f%%); new orders halted for UTC day.", day_loss * 100)
+            LOG.error("Daily loss threshold reached (%.2f%%); new entries halted for UTC day.", day_loss * 100)
+        if is_new_candle and signal.action in {"buy", "sell"}:
+            open_orders = client.open_orders(config.symbol)
+            if not isinstance(open_orders, list):
+                raise RuntimeError("Unexpected open-orders response; refusing to trade")
+            if open_orders:
+                raise RuntimeError("Open Spot orders exist for this symbol; reconcile them before restarting")
         if state.halted and not (is_new_candle and signal.action == "sell" and state.owned_quantity > 0):
             LOG.warning("New entries halted for today; existing-position exits remain permitted. signal=%s equity_estimate=%.2f", signal.action, equity)
             if is_new_candle:
@@ -159,7 +165,7 @@ def run_live(config: BotConfig) -> None:
                     LOG.info("BUY skipped: order value %.2f is below exchange minimum %.2f", amount, min_notional)
                     state.last_signal_candle = last.open_time
                     state_store.save()
-                elif free_base > 0:
+                elif balances.get(base_asset, 0.0) > 0:
                     LOG.warning("BUY skipped: account already has %s outside this bot's ownership ledger", base_asset)
                     state.last_signal_candle = last.open_time
                     state_store.save()
