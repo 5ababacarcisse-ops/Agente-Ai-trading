@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass
 from math import isfinite
 
-
 LIVE_CONFIRMATION = "I_UNDERSTAND_REAL_MONEY_RISK"
 MAINNET_CONFIRMATION = "I_ACCEPT_MAINNET_REAL_FUNDS_RISK"
 
@@ -39,7 +38,7 @@ class BotConfig:
     mainnet_confirmation: str = ""
 
     @classmethod
-    def from_env(cls) -> "BotConfig":
+    def from_env(cls) -> BotConfig:
         return cls(
             mode=os.getenv("TRADING_MODE", "paper").strip().lower(),
             symbol=os.getenv("TRADING_SYMBOL", "BTCUSDT").strip().upper(),
