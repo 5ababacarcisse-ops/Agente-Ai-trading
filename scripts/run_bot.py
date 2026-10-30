@@ -7,18 +7,18 @@ Do not run live mode until you've reviewed all source code and tested paper mode
 from __future__ import annotations
 
 import logging
-from math import isfinite
 import os
 import signal
 import time
-from decimal import Decimal, ROUND_DOWN
+from decimal import ROUND_DOWN, Decimal
+from math import isfinite
 
 from crypto_bot.binance_spot import BinanceSpotClient
 from crypto_bot.config import BotConfig
 from crypto_bot.live_guard import validate_live_order
 from crypto_bot.live_orders import confirmed_filled_quantity
-from crypto_bot.market_data import fetch_klines
 from crypto_bot.live_state import LiveStateStore
+from crypto_bot.market_data import fetch_klines
 from crypto_bot.paper import PaperPortfolio
 from crypto_bot.strategy import latest_signal
 
