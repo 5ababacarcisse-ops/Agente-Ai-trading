@@ -4,7 +4,7 @@ Example:
   PYTHONPATH=src python scripts/run_backtest.py --symbol BTCUSDT --interval 1h
 """
 import argparse
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from crypto_bot.backtest import backtest_sma_crossover
 from crypto_bot.market_data import fetch_historical_klines, fetch_klines
@@ -26,7 +26,7 @@ def main():
     if args.days < 0 or args.days > 3650:
         parser.error("--days must be between 0 and 3650")
     if args.days:
-        end = datetime.now(timezone.utc)
+        end = datetime.now(UTC)
         start = end - timedelta(days=args.days)
         candles = fetch_historical_klines(
             args.symbol, args.interval,

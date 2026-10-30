@@ -26,6 +26,7 @@ def test_historical_fetch_caps_maximum_candles():
 
 def test_historical_fetch_rejects_silent_truncation(monkeypatch):
     import json
+
     from crypto_bot import market_data
 
     payload = [

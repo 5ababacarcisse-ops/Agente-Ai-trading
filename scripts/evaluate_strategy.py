@@ -4,7 +4,7 @@ Example:
   PYTHONPATH=src python scripts/evaluate_strategy.py --symbol BTCUSDT --interval 1h --days 365
 """
 import argparse
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from crypto_bot.backtest import backtest_sma_crossover
 from crypto_bot.market_data import fetch_historical_klines
@@ -30,7 +30,7 @@ def main() -> None:
     if args.fast < 1 or args.slow <= args.fast:
         parser.error("require 1 <= --fast < --slow")
 
-    end = datetime.now(timezone.utc)
+    end = datetime.now(UTC)
     start = end - timedelta(days=args.days)
     candles = fetch_historical_klines(
         args.symbol,
@@ -44,13 +44,13 @@ def main() -> None:
     if split < args.slow + 2 or len(candles) - split < args.slow + 2:
         parser.error("not enough candles for both train and test periods; use more days or a shorter interval")
 
-    common = dict(
-        initial_cash=args.cash,
-        fast_window=args.fast,
-        slow_window=args.slow,
-        fee_fraction=args.fee,
-        slippage_fraction=args.slippage,
-    )
+    common = {
+        "initial_cash": args.cash,
+        "fast_window": args.fast,
+        "slow_window": args.slow,
+        "fee_fraction": args.fee,
+        "slippage_fraction": args.slippage,
+    }
     train = backtest_sma_crossover(candles[:split], **common)
     # Reuse historical warm-up candles, but score returns only from the split
     # onward. At the split, the simulated portfolio starts in cash.

@@ -7,17 +7,18 @@ Do not run live mode until you've reviewed all source code and tested paper mode
 from __future__ import annotations
 
 import logging
-from math import isfinite
 import os
 import signal
 import time
-from decimal import Decimal, ROUND_DOWN
+from decimal import ROUND_DOWN, Decimal
+from math import isfinite
 
 from crypto_bot.binance_spot import BinanceSpotClient
 from crypto_bot.config import BotConfig
 from crypto_bot.live_guard import validate_live_order
-from crypto_bot.market_data import fetch_klines
+from crypto_bot.live_orders import confirmed_filled_quantity
 from crypto_bot.live_state import LiveStateStore
+from crypto_bot.market_data import fetch_klines
 from crypto_bot.paper import PaperPortfolio
 from crypto_bot.strategy import latest_signal
 
@@ -183,9 +184,7 @@ def run_live(config: BotConfig) -> None:
                     state.pending_order = f"BUY {config.symbol} candle={last.open_time}"
                     state_store.save()
                     response = client.market_buy_quote(config.symbol, _format_quote_amount(amount))
-                    executed = float(response.get("executedQty", 0))
-                    if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or not isfinite(executed) or executed <= 0:
-                        raise RuntimeError("Buy order was not confirmed; pending intent retained. Inspect Binance order history.")
+                    executed = confirmed_filled_quantity(response)
                     state.owned_quantity = executed
                     state.last_signal_candle = last.open_time
                     state.pending_order = ""
@@ -208,9 +207,7 @@ def run_live(config: BotConfig) -> None:
                 state.pending_order = f"SELL {config.symbol} candle={last.open_time}"
                 state_store.save()
                 response = client.market_sell_quantity(config.symbol, quantity_text)
-                executed = float(response.get("executedQty", 0))
-                if response.get("status") not in {"FILLED", "PARTIALLY_FILLED"} or not isfinite(executed) or executed <= 0:
-                    raise RuntimeError("Sell order was not confirmed; pending intent retained. Inspect Binance order history.")
+                executed = confirmed_filled_quantity(response)
                 state.owned_quantity = max(0.0, state.owned_quantity - executed)
                 state.last_signal_candle = last.open_time
                 state.pending_order = ""
