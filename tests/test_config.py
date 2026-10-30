@@ -1,6 +1,6 @@
 import pytest
 
-from crypto_bot.config import BotConfig, LIVE_CONFIRMATION, MAINNET_CONFIRMATION
+from crypto_bot.config import LIVE_CONFIRMATION, MAINNET_CONFIRMATION, BotConfig
 from crypto_bot.live_guard import validate_live_order
 
 
