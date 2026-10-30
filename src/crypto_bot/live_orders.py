@@ -10,7 +10,7 @@ def confirmed_filled_quantity(response: dict) -> float:
     keeps its persisted pending-order intent and requires manual reconciliation.
     """
     if not isinstance(response, dict):
-        raise RuntimeError("Invalid Binance order response; pending intent retained for reconciliation")
+        raise TypeError("Invalid Binance order response; pending intent retained for reconciliation")
     if response.get("status") != "FILLED":
         raise RuntimeError(
             f"Binance order status is {response.get('status')!r}, not FILLED; "
