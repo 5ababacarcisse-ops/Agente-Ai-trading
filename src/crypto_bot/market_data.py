@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
-
 
 BASE_URL = "https://api.binance.com/api/v3/klines"
 ALLOWED_INTERVALS = {
@@ -28,7 +27,7 @@ class Candle:
     @property
     def timestamp(self) -> str:
         return datetime.fromtimestamp(
-            self.open_time / 1000, tz=timezone.utc
+            self.open_time / 1000, tz=UTC
         ).isoformat()
 
 
@@ -60,7 +59,7 @@ def fetch_klines(
     if not isinstance(payload, list):
         # Binance returns a JSON object with a message when the request fails.
         message = payload.get("msg", "unexpected API response") if isinstance(payload, dict) else "unexpected API response"
-        raise RuntimeError(f"Binance API error: {message}")
+        raise TypeError(f"Binance API error: {message}")
 
     candles = []
     for row in payload:
