@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from math import isfinite
 from pathlib import Path
 
@@ -51,7 +51,7 @@ class PaperPortfolio:
         return self.state.cash + self.state.base_quantity * price
 
     def roll_day(self, price: float) -> None:
-        today = datetime.now(timezone.utc).date().isoformat()
+        today = datetime.now(UTC).date().isoformat()
         if self.state.day_utc != today:
             self.state.day_utc = today
             self.state.day_start_equity = self.equity(price)
